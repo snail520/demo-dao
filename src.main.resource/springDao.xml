@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd ">
+	<description>SpringDao配置文件 </description>
+
+	<context:component-scan base-package="com.lezhi.demo.*.impl" />
+
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.lezhi.demo.dao.mapper" />
+	</bean>
+
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation" value="classpath:/mybatis.xml"></property>
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 主数据源 -->
+	<bean id="masterDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+ 		<property name="url" value="jdbc:mysql://10.211.55.4:3306/gaox?Unicode=true&amp;autoReconnect=true&amp;characterEncoding=UTF-8&amp;allowMultiQueries=true" /> 
+         <property name="username" value="root" /> 
+         <property name="password" value="root1234" /> 
+		<property name="maxTotal">
+			<value>500</value>
+		</property>
+		<property name="initialSize">
+			<value>1</value>
+		</property>
+		<property name="maxWaitMillis">
+			<value>10000</value>
+		</property>
+		<property name="maxIdle">
+			<value>100</value>
+		</property>
+		<property name="minIdle">
+			<value>1</value>
+		</property>
+	</bean>
+	<!-- 从数据源 -->
+	<bean id="slaveDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+ 	     <property name="url" value="jdbc:mysql://10.211.55.9:3306/gaox1?Unicode=true&amp;autoReconnect=true&amp;characterEncoding=UTF-8&amp;allowMultiQueries=true" /> 
+         <property name="username" value="root" /> 
+         <property name="password" value="root1234" /> 
+        <property name="maxTotal">
+			<value>500</value>
+		</property>
+		<property name="initialSize">
+			<value>1</value>
+		</property>
+		<property name="maxWaitMillis">
+			<value>10000</value>
+		</property>
+		<property name="maxIdle">
+			<value>100</value>
+		</property>
+		<property name="minIdle">
+			<value>1</value>
+		</property>
+	</bean>
+
+
+	<bean id="dataSource" class="com.lezhi.demo.model.util.DynamicDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+				<entry key="masterDataSource" value-ref="masterDataSource" />
+				<entry key="slaveDataSource" value-ref="slaveDataSource" />
+			</map>
+		</property>
+		<property name="defaultTargetDataSource" ref="masterDataSource" />
+	</bean>
+
+	<!-- 切换数据源 -->
+	<bean id="dataSourceAspect" class="com.lezhi.demo.model.util.DataSourceAspect" />
+	<aop:config>
+		<aop:advisor advice-ref="dataSourceAspect"
+			pointcut="execution (* com.lezhi.demo.dao.*.*(..))" />
+	</aop:config>
+
+	<!--配置事务的传播特性 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+	<!--那些类的哪些方法参与事务 -->
+	<aop:config>
+		<aop:advisor advice-ref="txAdvice"
+			pointcut="execution (* com.lezhi.demo.dao.*.*(..))" />
+	</aop:config>
+</beans>
