@@ -3,12 +3,14 @@
     "-//mybatis.org//DTD Mapper 3.0//EN"  
     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
 <mapper namespace="com.lezhi.demo.dao.mapper.UserMapper"> 
-	
+	 <insert id="create">
+        ${value}
+     </insert>
 	<select id="findUser" resultType="user">
  	  SELECT * FROM sys_user WHERE userName = #{userName}
 	</select>
 	
-	  <insert id="insert" parameterType="user">
+	  <!-- <insert id="insert" parameterType="user">
 		 insert into sys_user
 	    <trim prefix="(" suffix=")" suffixOverrides="," >
 	      <if test="id != null" >
@@ -32,7 +34,7 @@
 	        #{password,jdbcType=VARCHAR},
 	      </if>
 	    </trim>
-	 </insert>
+	 </insert> -->
 	 
 	 <delete id="delete">
 	   delete from sys_user where id=#{id}
